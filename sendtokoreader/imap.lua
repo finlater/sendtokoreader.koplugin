@@ -1,0 +1,220 @@
+local socket = require("socket")
+local ssl = require("ssl")
+local Mail = require("sendtokoreader/mail")
+local IMAP = {}
+IMAP.__index = IMAP
+
+local function fail(message) error(message,0) end
+
+function IMAP.hostnameMatches(host, name)
+    if type(name) ~= "string" or name:find("%z") then return false end
+    host, name = host:lower():gsub("%.$", ""), name:lower():gsub("%.$", "")
+    if host == name then return true end
+    -- Only a complete left-most DNS label may be a wildcard; never match IP literals.
+    local suffix = name:match("^%*%.([^*]+%.[^*]+)$")
+    return suffix ~= nil and not host:match("^[%d.]+$") and host:match("^[^.]+%.(.+)$") == suffix
+end
+
+local function verifyHost(conn, host)
+    local cert = conn:getpeercertificate()
+    if not cert then fail("TLS：服务器未提供证书") end
+    local san = cert:extensions()["2.5.29.17"] or {}
+    local names = host:match("^[%d.]+$") and san.iPAddress or san.dNSName
+    for _, name in ipairs(names or {}) do if IMAP.hostnameMatches(host,name) then return end end
+    fail("TLS：证书与邮箱服务器名称不匹配")
+end
+
+function IMAP.validate(config)
+    assert(type(config) == "table", "请先配置邮箱")
+    assert(type(config.host) == "string" and config.host:match("^[%w.-]+$") and #config.host < 254,
+        "IMAP 服务器应填写主机名，不包含网址或端口")
+    assert(type(config.port) == "number" and config.port >= 1 and config.port <= 65535 and config.port%1 == 0, "端口无效")
+    assert(type(config.username) == "string" and config.username ~= "", "请填写邮箱地址")
+    assert(type(config.password) == "string" and config.password ~= "", "请填写客户端授权码")
+    Mail.quote(config.username); Mail.quote(config.password)
+end
+
+function IMAP.connect(config)
+    IMAP.validate(config)
+    local self = setmetatable({tag=0},IMAP)
+    local ok, err = pcall(function()
+        self.conn = assert(socket.tcp())
+        self.conn:settimeout(20)
+        assert(self.conn:connect(config.host,config.port), "无法连接到邮箱服务器")
+        local params = {
+            mode="client", protocol="any", verify="peer",
+            options={"all","no_sslv2","no_sslv3","no_tlsv1","no_tlsv1_1"},
+            cafile=config.ca_file or "data/ca-bundle.crt",
+        }
+        local secured, wrap_err = ssl.wrap(self.conn,params)
+        if not secured then fail("TLS 初始化失败：" .. tostring(wrap_err)) end
+        self.conn = secured
+        self.conn:settimeout(20)
+        self.conn:sni(config.host)
+        local handshake = self.conn:dohandshake()
+        if not handshake then fail("TLS 验证失败，请检查服务器名称、系统日期及 CA 证书") end
+        verifyHost(self.conn,config.host)
+        local greeting = self:line()
+        if not greeting:match("^%* OK") then fail("邮箱服务器未返回 IMAP 就绪响应") end
+        -- Do not include command text or the server's authentication response in errors/logs.
+        self:command("LOGIN " .. Mail.quote(config.username) .. " " .. Mail.quote(config.password), "登录失败，请检查 IMAP 服务和客户端授权码")
+        local caps = table.concat(self:command("CAPABILITY")," "):upper()
+        if (" " .. caps .. " "):find(" ID ",1,true) then
+            self:command('ID ("name" "sendtokoreader" "version" "0.1.0" "vendor" "KOReader plugin")')
+        end
+        local lines = self:command("EXAMINE INBOX", "无法只读打开收件箱")
+        for _, line in ipairs(lines) do
+            self.validity = tonumber(line:match("%[UIDVALIDITY (%d+)%]")) or self.validity
+            self.next_uid = tonumber(line:match("%[UIDNEXT (%d+)%]")) or self.next_uid
+        end
+        assert(self.validity, "服务器未提供 UIDVALIDITY，无法安全记录下载状态")
+    end)
+    if not ok then self:close(); return nil, tostring(err) end
+    return self
+end
+
+function IMAP:close()
+    if self.conn then pcall(self.conn.close,self.conn); self.conn=nil end
+end
+
+function IMAP:line()
+    local line = self.conn:receive("*l")
+    if not line then fail("邮箱连接中断或超时") end
+    if #line > 1024*1024 then fail("邮箱响应过大") end
+    return line
+end
+
+function IMAP:command(command, public_error, consume)
+    self.tag = self.tag + 1
+    local tag = string.format("S%05d",self.tag)
+    local wire, offset = tag .. " " .. command .. "\r\n", 1
+    while offset <= #wire do
+        local sent = self.conn:send(wire,offset)
+        if not sent then fail("发送邮箱请求失败") end
+        offset = sent + 1
+    end
+    local lines, total = {}, 0
+    while true do
+        local line = self:line()
+        if line:sub(1,#tag+1) == tag .. " " then
+            if not line:match("^" .. tag .. " OK") then fail(public_error or "邮箱拒绝了请求") end
+            lines[#lines+1] = line
+            return lines
+        end
+        if line:match("^%* BYE") then fail("邮箱服务器断开了连接") end
+        if line:sub(1,1) == "+" then fail("邮箱要求当前客户端不支持的认证方式") end
+        while line:match("{%d+}%s*$") do
+            local size = tonumber(line:match("{(%d+)}%s*$"))
+            local parts = {}
+            if not consume and size > 1024*1024 then fail("邮件元数据过大") end
+            local left = size
+            while left > 0 do
+                local chunk = self.conn:receive(math.min(left,16384))
+                if not chunk then fail("附件传输中断，请重新下载") end
+                left = left - #chunk
+                if consume then consume(chunk,size,line) else parts[#parts+1] = chunk end
+            end
+            local literal = consume and "NIL" or ('"' .. table.concat(parts):gsub("\\","\\\\"):gsub('"','\\"') .. '"')
+            line = line:gsub("{%d+}%s*$", "") .. literal .. self:line()
+        end
+        total = total + #line
+        if total > 8*1024*1024 then fail("邮箱响应超过安全上限") end
+        lines[#lines+1] = line
+    end
+end
+
+local function fetchAttributes(lines)
+    local result = {}
+    for _, line in ipairs(lines) do
+        if line:match("^%* %d+ FETCH ") then
+            local parsed = Mail.parse(line)
+            local attrs, fields = parsed[4], {}
+            assert(type(attrs) == "table", "Invalid FETCH response")
+            for i=1,#attrs-1,2 do fields[tostring(attrs[i]):upper()] = attrs[i+1] end
+            result[#result+1] = fields
+        end
+    end
+    return result
+end
+
+function IMAP:list(cursor)
+    cursor = cursor or {}
+    local last = cursor.validity == self.validity and tonumber(cursor.last_uid) or nil
+    local query
+    if last then query = "UID " .. (last+1) .. ":*"
+    else
+        local date = os.date("!*t",os.time()-30*86400)
+        local months = {"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"}
+        query = string.format("SINCE %02d-%s-%04d",date.day,months[date.month],date.year)
+    end
+    local ids = {}
+    for _, line in ipairs(self:command("UID SEARCH " .. query)) do
+        local values = line:match("^%* SEARCH(.*)")
+        if values then for uid in values:gmatch("%d+") do
+            uid = tonumber(uid)
+            if not last or uid > last then ids[#ids+1] = uid end
+        end end
+    end
+    table.sort(ids)
+    if #ids > 10000 then fail("本次新增邮件超过 10000 封，请使用专门的收书邮箱") end
+    local items, high = {}, last or 0
+    for _, uid in ipairs(ids) do
+        local records = fetchAttributes(self:command("UID FETCH " .. uid .. " (UID INTERNALDATE BODYSTRUCTURE)"))
+        for _, fields in ipairs(records) do
+            if tonumber(fields.UID) == uid then
+                assert(type(fields.BODYSTRUCTURE) == "table", "邮件缺少附件结构信息")
+                for _, item in ipairs(Mail.attachments(fields.BODYSTRUCTURE)) do
+                    item.uid, item.validity = uid, self.validity
+                    item.key = tostring(self.validity) .. ":" .. uid .. ":" .. item.section
+                    item.date = type(fields.INTERNALDATE) == "string" and fields.INTERNALDATE or ""
+                    items[#items+1] = item
+                end
+            end
+        end
+        high = math.max(high,uid)
+    end
+    -- UIDNEXT is a snapshot from EXAMINE, not a value queried after the scan.
+    if self.next_uid then high = math.max(high,self.next_uid-1) end
+    return {items=items,validity=self.validity,last_uid=high}
+end
+
+function IMAP:download(item, path)
+    assert(item.validity == self.validity, "邮箱内容标识已变化，请重新检查邮箱")
+    assert(type(item.uid) == "number" and item.uid%1 == 0 and item.uid > 0, "Invalid UID")
+    assert(type(item.section) == "string" and item.section:match("^%d+[.%d]*$"), "Invalid MIME section")
+    local file = assert(io.open(path,"wb"), "无法创建下载临时文件")
+    local bytes, wire_bytes, literals = 0, 0, 0
+    local ok, err = pcall(function()
+        local decode = Mail.decoder(item.encoding,function(chunk)
+            assert(file:write(chunk), "存储空间不足或写入失败")
+            bytes = bytes + #chunk
+        end)
+        local lines = self:command("UID FETCH " .. item.uid .. " (UID BODY.PEEK[" .. item.section .. "])", nil,
+            function(chunk,size,prefix)
+                assert(prefix:find("BODY[" .. item.section .. "]",1,true), "Unexpected attachment response")
+                if wire_bytes == 0 then literals = literals + 1 end
+                assert(size == item.wire_size, "附件大小已变化，请重新检查邮箱")
+                decode(chunk); wire_bytes = wire_bytes + #chunk
+            end)
+        local matched = false
+        for _, fields in ipairs(fetchAttributes(lines)) do if tonumber(fields.UID) == item.uid then matched=true end end
+        assert(matched and literals == 1 and wire_bytes == item.wire_size, "附件不存在或传输不完整")
+        decode(nil)
+        assert(file:flush(), "附件写入失败")
+        require("ffi/util").fsyncOpenedFile(file)
+    end)
+    local closed = file:close()
+    if not ok or not closed then os.remove(path); return nil, tostring(err or "附件写入失败") end
+    return bytes
+end
+
+function IMAP.run(config, method, ...)
+    local client, err = IMAP.connect(config)
+    if not client then return nil, err end
+    local ok, result, detail = pcall(method,client,...)
+    client:close()
+    if not ok then return nil, tostring(result) end
+    return result, detail
+end
+
+return IMAP

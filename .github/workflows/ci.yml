@@ -1,0 +1,115 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  checks:
+    name: Static checks and package
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Install Lua tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y luajit luarocks
+          sudo luarocks install luacheck
+      - name: Lua static and syntax checks
+        run: |
+          luacheck main.lua _meta.lua sendtokoreader tests
+          find main.lua _meta.lua sendtokoreader tests -name '*.lua' -print0 |
+            while IFS= read -r -d '' file; do luajit -b "$file" /tmp/luajit-check.out; done
+      - name: Python syntax and release package
+        run: |
+          python3 -m py_compile scripts/*.py tests/*.py
+          python3 scripts/package_release.py
+      - name: Upload installable package
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: plugin-package
+          path: dist/sendtokoreader.koplugin-v*
+          if-no-files-found: error
+          retention-days: 14
+
+  integration:
+    name: KOReader native integration
+    runs-on: ubuntu-latest
+    container:
+      image: koreader/kobase:1.0.0-22.04
+    timeout-minutes: 65
+    env:
+      KOREADER_COMMIT: 1e2fa5f1239028ab4b37acae833cdc86a71e5258
+      EMULATE_READER: '1'
+    steps:
+      - name: Checkout plugin
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Checkout pinned KOReader
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          repository: koreader/koreader
+          ref: ${{ env.KOREADER_COMMIT }}
+          path: .koreader-integration
+          submodules: recursive
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Cache KOReader build
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: .koreader-integration/build
+          key: koreader-linux-${{ env.KOREADER_COMMIT }}-${{ hashFiles('scripts/build_koreader.sh') }}
+      - name: Build native emulator
+        run: bash scripts/build_koreader.sh .koreader-integration
+      - name: Test TLS mailbox and native UI
+        run: python3 tests/run.py .koreader-integration/install/koreader
+      - name: Upload native renders and logs
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: native-test-evidence
+          path: tests/evidence/
+          if-no-files-found: warn
+          retention-days: 14
+
+  release:
+    name: Release new plugin version
+    needs: [checks, integration]
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Download verified package
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: plugin-package
+          path: dist
+      - name: Publish version from _meta.lua
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="$(python3 scripts/package_release.py --version)"
+          tag="v$version"
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "$tag already has a release; keeping existing assets."
+            exit 0
+          fi
+          archive="sendtokoreader.koplugin-$tag.zip"
+          (cd dist && sha256sum --check "$archive.sha256")
+          options=()
+          if [[ "$version" == 0.* ]]; then options+=(--prerelease --latest=false); fi
+          gh release create "$tag" "dist/$archive" "dist/$archive.sha256" \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "$tag" \
+            --notes-file "dist/sendtokoreader.koplugin-$tag.notes.md" "${options[@]}"

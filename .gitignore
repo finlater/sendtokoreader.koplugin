@@ -1,0 +1,7 @@
+.test-profile/
+tests/evidence/
+__pycache__/
+dist/
+.DS_Store
+.koreader-integration/
+*.koplugin.zip
