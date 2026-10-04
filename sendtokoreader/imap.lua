@@ -1,3 +1,4 @@
+local gettext = require("sendtokoreader/i18n")
 local socket = require("socket")
 local ssl = require("ssl")
 local Mail = require("sendtokoreader/mail")
@@ -17,20 +18,20 @@ end
 
 local function verifyHost(conn, host)
     local cert = conn:getpeercertificate()
-    if not cert then fail("TLS：服务器未提供证书") end
+    if not cert then fail(gettext("The server did not provide a TLS certificate.")) end
     local san = cert:extensions()["2.5.29.17"] or {}
     local names = host:match("^[%d.]+$") and san.iPAddress or san.dNSName
     for _, name in ipairs(names or {}) do if IMAP.hostnameMatches(host,name) then return end end
-    fail("TLS：证书与邮箱服务器名称不匹配")
+    fail(gettext("The TLS certificate does not match the mail server name."))
 end
 
 function IMAP.validate(config)
-    assert(type(config) == "table", "请先配置邮箱")
+    assert(type(config) == "table", gettext("Set up a mailbox first."))
     assert(type(config.host) == "string" and config.host:match("^[%w.-]+$") and #config.host < 254,
-        "IMAP 服务器应填写主机名，不包含网址或端口")
-    assert(type(config.port) == "number" and config.port >= 1 and config.port <= 65535 and config.port%1 == 0, "端口无效")
-    assert(type(config.username) == "string" and config.username ~= "", "请填写邮箱地址")
-    assert(type(config.password) == "string" and config.password ~= "", "请填写客户端授权码")
+        gettext("Enter the IMAP hostname without a URL or port."))
+    assert(type(config.port) == "number" and config.port >= 1 and config.port <= 65535 and config.port%1 == 0, gettext("Invalid port"))
+    assert(type(config.username) == "string" and config.username ~= "", gettext("Enter your email address."))
+    assert(type(config.password) == "string" and config.password ~= "", gettext("Enter your password or app password."))
     Mail.quote(config.username); Mail.quote(config.password)
 end
 
@@ -38,36 +39,36 @@ function IMAP.connect(config)
     IMAP.validate(config)
     local self = setmetatable({tag=0},IMAP)
     local ok, err = pcall(function()
-        self.conn = assert(socket.tcp())
+        self.conn = assert(socket.tcp(),gettext("Could not initialize a secure connection."))
         self.conn:settimeout(20)
-        assert(self.conn:connect(config.host,config.port), "无法连接到邮箱服务器")
+        assert(self.conn:connect(config.host,config.port), gettext("Could not connect to the mail server."))
         local params = {
             mode="client", protocol="any", verify="peer",
             options={"all","no_sslv2","no_sslv3","no_tlsv1","no_tlsv1_1"},
             cafile=config.ca_file or "data/ca-bundle.crt",
         }
-        local secured, wrap_err = ssl.wrap(self.conn,params)
-        if not secured then fail("TLS 初始化失败：" .. tostring(wrap_err)) end
+        local secured = ssl.wrap(self.conn,params)
+        if not secured then fail(gettext("Could not initialize a secure connection.")) end
         self.conn = secured
         self.conn:settimeout(20)
         self.conn:sni(config.host)
         local handshake = self.conn:dohandshake()
-        if not handshake then fail("TLS 验证失败，请检查服务器名称、系统日期及 CA 证书") end
+        if not handshake then fail(gettext("TLS verification failed. Check the server name, system date and CA certificates.")) end
         verifyHost(self.conn,config.host)
         local greeting = self:line()
-        if not greeting:match("^%* OK") then fail("邮箱服务器未返回 IMAP 就绪响应") end
+        if not greeting:match("^%* OK") then fail(gettext("The mail server did not return an IMAP ready response.")) end
         -- Do not include command text or the server's authentication response in errors/logs.
-        self:command("LOGIN " .. Mail.quote(config.username) .. " " .. Mail.quote(config.password), "登录失败，请检查 IMAP 服务和客户端授权码")
+        self:command("LOGIN " .. Mail.quote(config.username) .. " " .. Mail.quote(config.password), gettext("Sign-in failed. Check IMAP access and your password or app password."))
         local caps = table.concat(self:command("CAPABILITY")," "):upper()
         if (" " .. caps .. " "):find(" ID ",1,true) then
             self:command('ID ("name" "sendtokoreader" "version" "0.1.0" "vendor" "KOReader plugin")')
         end
-        local lines = self:command("EXAMINE INBOX", "无法只读打开收件箱")
+        local lines = self:command("EXAMINE INBOX", gettext("Could not open the inbox in read-only mode."))
         for _, line in ipairs(lines) do
             self.validity = tonumber(line:match("%[UIDVALIDITY (%d+)%]")) or self.validity
             self.next_uid = tonumber(line:match("%[UIDNEXT (%d+)%]")) or self.next_uid
         end
-        assert(self.validity, "服务器未提供 UIDVALIDITY，无法安全记录下载状态")
+        assert(self.validity, gettext("The server did not provide UIDVALIDITY. Download history cannot be tracked safely."))
     end)
     if not ok then self:close(); return nil, tostring(err) end
     return self
@@ -79,8 +80,8 @@ end
 
 function IMAP:line()
     local line = self.conn:receive("*l")
-    if not line then fail("邮箱连接中断或超时") end
-    if #line > 1024*1024 then fail("邮箱响应过大") end
+    if not line then fail(gettext("The mail connection was interrupted or timed out.")) end
+    if #line > 1024*1024 then fail(gettext("The mail server response is too large.")) end
     return line
 end
 
@@ -90,27 +91,27 @@ function IMAP:command(command, public_error, consume)
     local wire, offset = tag .. " " .. command .. "\r\n", 1
     while offset <= #wire do
         local sent = self.conn:send(wire,offset)
-        if not sent then fail("发送邮箱请求失败") end
+        if not sent then fail(gettext("Could not send the mail request.")) end
         offset = sent + 1
     end
     local lines, total = {}, 0
     while true do
         local line = self:line()
         if line:sub(1,#tag+1) == tag .. " " then
-            if not line:match("^" .. tag .. " OK") then fail(public_error or "邮箱拒绝了请求") end
+            if not line:match("^" .. tag .. " OK") then fail(public_error or gettext("The mail server rejected the request.")) end
             lines[#lines+1] = line
             return lines
         end
-        if line:match("^%* BYE") then fail("邮箱服务器断开了连接") end
-        if line:sub(1,1) == "+" then fail("邮箱要求当前客户端不支持的认证方式") end
+        if line:match("^%* BYE") then fail(gettext("The mail server closed the connection.")) end
+        if line:sub(1,1) == "+" then fail(gettext("The server requires an unsupported authentication method.")) end
         while line:match("{%d+}%s*$") do
             local size = tonumber(line:match("{(%d+)}%s*$"))
             local parts = {}
-            if not consume and size > 1024*1024 then fail("邮件元数据过大") end
+            if not consume and size > 1024*1024 then fail(gettext("The message metadata is too large.")) end
             local left = size
             while left > 0 do
                 local chunk = self.conn:receive(math.min(left,16384))
-                if not chunk then fail("附件传输中断，请重新下载") end
+                if not chunk then fail(gettext("Attachment transfer interrupted. Please retry.")) end
                 left = left - #chunk
                 if consume then consume(chunk,size,line) else parts[#parts+1] = chunk end
             end
@@ -118,7 +119,7 @@ function IMAP:command(command, public_error, consume)
             line = line:gsub("{%d+}%s*$", "") .. literal .. self:line()
         end
         total = total + #line
-        if total > 8*1024*1024 then fail("邮箱响应超过安全上限") end
+        if total > 8*1024*1024 then fail(gettext("The mail server response exceeded the safety limit.")) end
         lines[#lines+1] = line
     end
 end
@@ -129,7 +130,7 @@ local function fetchAttributes(lines)
         if line:match("^%* %d+ FETCH ") then
             local parsed = Mail.parse(line)
             local attrs, fields = parsed[4], {}
-            assert(type(attrs) == "table", "Invalid FETCH response")
+            assert(type(attrs) == "table", gettext("Invalid FETCH response"))
             for i=1,#attrs-1,2 do fields[tostring(attrs[i]):upper()] = attrs[i+1] end
             result[#result+1] = fields
         end
@@ -156,13 +157,13 @@ function IMAP:list(cursor)
         end end
     end
     table.sort(ids)
-    if #ids > 10000 then fail("本次新增邮件超过 10000 封，请使用专门的收书邮箱") end
+    if #ids > 10000 then fail(gettext("More than 10,000 new messages. Please use a dedicated mailbox for ebooks.")) end
     local items, high = {}, last or 0
     for _, uid in ipairs(ids) do
         local records = fetchAttributes(self:command("UID FETCH " .. uid .. " (UID INTERNALDATE BODYSTRUCTURE)"))
         for _, fields in ipairs(records) do
             if tonumber(fields.UID) == uid then
-                assert(type(fields.BODYSTRUCTURE) == "table", "邮件缺少附件结构信息")
+                assert(type(fields.BODYSTRUCTURE) == "table", gettext("The message is missing its attachment structure."))
                 for _, item in ipairs(Mail.attachments(fields.BODYSTRUCTURE)) do
                     item.uid, item.validity = uid, self.validity
                     item.key = tostring(self.validity) .. ":" .. uid .. ":" .. item.section
@@ -179,32 +180,32 @@ function IMAP:list(cursor)
 end
 
 function IMAP:download(item, path)
-    assert(item.validity == self.validity, "邮箱内容标识已变化，请重新检查邮箱")
-    assert(type(item.uid) == "number" and item.uid%1 == 0 and item.uid > 0, "Invalid UID")
-    assert(type(item.section) == "string" and item.section:match("^%d+[.%d]*$"), "Invalid MIME section")
-    local file = assert(io.open(path,"wb"), "无法创建下载临时文件")
+    assert(item.validity == self.validity, gettext("Mailbox identifiers changed. Please refresh the inbox."))
+    assert(type(item.uid) == "number" and item.uid%1 == 0 and item.uid > 0, gettext("Invalid UID"))
+    assert(type(item.section) == "string" and item.section:match("^%d+[.%d]*$"), gettext("Invalid MIME section"))
+    local file = assert(io.open(path,"wb"), gettext("Could not create the temporary download file."))
     local bytes, wire_bytes, literals = 0, 0, 0
     local ok, err = pcall(function()
         local decode = Mail.decoder(item.encoding,function(chunk)
-            assert(file:write(chunk), "存储空间不足或写入失败")
+            assert(file:write(chunk), gettext("Not enough storage space, or writing failed."))
             bytes = bytes + #chunk
         end)
         local lines = self:command("UID FETCH " .. item.uid .. " (UID BODY.PEEK[" .. item.section .. "])", nil,
             function(chunk,size,prefix)
-                assert(prefix:find("BODY[" .. item.section .. "]",1,true), "Unexpected attachment response")
+                assert(prefix:find("BODY[" .. item.section .. "]",1,true), gettext("Unexpected attachment response"))
                 if wire_bytes == 0 then literals = literals + 1 end
-                assert(size == item.wire_size, "附件大小已变化，请重新检查邮箱")
+                assert(size == item.wire_size, gettext("Attachment size changed. Please refresh the inbox."))
                 decode(chunk); wire_bytes = wire_bytes + #chunk
             end)
         local matched = false
         for _, fields in ipairs(fetchAttributes(lines)) do if tonumber(fields.UID) == item.uid then matched=true end end
-        assert(matched and literals == 1 and wire_bytes == item.wire_size, "附件不存在或传输不完整")
+        assert(matched and literals == 1 and wire_bytes == item.wire_size, gettext("The attachment is missing or incomplete."))
         decode(nil)
-        assert(file:flush(), "附件写入失败")
+        assert(file:flush(), gettext("Could not write the attachment."))
         require("ffi/util").fsyncOpenedFile(file)
     end)
     local closed = file:close()
-    if not ok or not closed then os.remove(path); return nil, tostring(err or "附件写入失败") end
+    if not ok or not closed then os.remove(path); return nil, tostring(err or gettext("Could not write the attachment.")) end
     return bytes
 end
 

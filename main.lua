@@ -1,3 +1,4 @@
+local gettext = require("sendtokoreader/i18n")
 local DataStorage = require("datastorage")
 local Dispatcher = require("dispatcher")
 local UIManager = require("ui/uimanager")
@@ -12,6 +13,7 @@ local lfs = require("libs/libkoreader-lfs")
 local Store = require("sendtokoreader/store")
 local IMAP = require("sendtokoreader/imap")
 local View = require("sendtokoreader/view")
+local Providers = require("sendtokoreader/providers")
 
 -- macOS initializes resolver sorting via libSystem; do it before Trapper forks.
 -- Otherwise the first getaddrinfo in a child of the SDL process may crash.
@@ -23,15 +25,15 @@ function Plugin:init()
     self.store=Store.open(DataStorage:getSettingsDir())
     self.selected={}; self.page=1; self.per_page=5
     self.ui.menu:registerToMainMenu(self)
-    Dispatcher:registerAction("sendtokoreader",{category="none",event="SendToKOReader",title="邮件收书",general=true})
+    Dispatcher:registerAction("sendtokoreader",{category="none",event="SendToKOReader",title=gettext("Mail inbox"),general=true})
 end
 
 function Plugin:addToMainMenu(items)
-    items.sendtokoreader={text="Send to KOReader · 邮件收书",sorting_hint="more_tools",callback=function() self:onSendToKOReader() end}
+    items.sendtokoreader={text=gettext("sendtokoreader · Mail inbox"),sorting_hint="more_tools",callback=function() self:onSendToKOReader() end}
 end
 
 function Plugin:onSendToKOReader() self:show("inbox"); return true end
-function Plugin.info(_, message) UIManager:show(InfoMessage:new{text=tostring(message)}) end
+function Plugin.info(_self, message) UIManager:show(InfoMessage:new{text=tostring(message)}) end
 function Plugin:defer(fn)
     UIManager:nextTick(function()
         local ok, err=pcall(fn)
@@ -53,16 +55,16 @@ function Plugin:closeWindow()
 end
 
 function Plugin.sizeText(size)
-    if size < 1024 then return size .. " B" end
-    if size < 1024*1024 then return string.format("%.1f KB",size/1024) end
-    return string.format("%.1f MB",size/1024/1024)
+    if size < 1024 then return string.format(gettext("%d B"),size) end
+    if size < 1024*1024 then return string.format(gettext("%.1f KB"),size/1024) end
+    return string.format(gettext("%.1f MB"),size/1024/1024)
 end
 
 function Plugin:downloadDirectory()
     if self.store.config.download_dir then return self.store.config.download_dir end
     local base=G_reader_settings:readSetting("download_dir") or G_reader_settings:readSetting("home_dir")
     if not base then base=lfs.attributes("/mnt/us/documents","mode") == "directory" and "/mnt/us/documents" or DataStorage:getDataDir() .. "/books" end
-    return base .. "/收书"
+    return base .. "/sendtokoreader"
 end
 
 function Plugin:selectionCount()
@@ -107,36 +109,38 @@ end
 function Plugin:chooseProvider()
     local dialog
     local rows={}
-    for _,provider in ipairs({{"163 邮箱","netease","imap.163.com"},{"QQ 邮箱","qq","imap.qq.com"},{"自定义 IMAP","custom",nil}}) do
-        rows[#rows+1]={{text=provider[1],callback=function()
-            self.draft.provider=provider[2]
-            if provider[3] then self.draft.host=provider[3]; self.draft.port=993 end
+    for _,provider in ipairs(Providers) do
+        rows[#rows+1]={{text=gettext(provider.label),callback=function()
+            Providers.select(self.draft,provider.id)
             UIManager:close(dialog); self:show("account")
         end}}
     end
-    dialog=ButtonDialog:new{title="邮箱服务",buttons=rows}
+    rows[#rows+1]={{text=gettext("Outlook / Exchange support"),callback=function() self:info(Providers.oauthNotice()) end}}
+    dialog=ButtonDialog:new{title=gettext("Mail provider"),buttons=rows}
     UIManager:show(dialog)
+    return dialog
 end
 
 function Plugin:editField(key, title)
     local dialog
     dialog=InputDialog:new{title=title,input=self.draft[key],input_hint=title,input_type="text",
         text_type=key == "password" and "password" or nil,
-        buttons={{{text="取消",id="close",callback=function() UIManager:close(dialog) end},
-            {text="保存",is_enter_default=true,callback=function()
+        buttons={{{text=gettext("Cancel"),id="close",callback=function() UIManager:close(dialog) end},
+            {text=gettext("Save"),is_enter_default=true,callback=function()
                 self.draft[key]=dialog:getInputText()
                 UIManager:close(dialog); self:show("account")
             end}}}}
     UIManager:show(dialog); dialog:onShowKeyboard()
+    return dialog
 end
 
 function Plugin:editServer()
     local dialog
-    dialog=MultiInputDialog:new{title="服务器设置 · TLS",fields={
-        {description="IMAP 服务器",text=self.draft.host},
-        {description="端口",text=tostring(self.draft.port),input_type="number"}},
-        buttons={{{text="取消",id="close",callback=function() UIManager:close(dialog) end},
-            {text="保存",callback=function()
+    dialog=MultiInputDialog:new{title=gettext("Server settings · TLS"),fields={
+        {description=gettext("IMAP server"),text=self.draft.host},
+        {description=gettext("Port"),text=tostring(self.draft.port),input_type="number"}},
+        buttons={{{text=gettext("Cancel"),id="close",callback=function() UIManager:close(dialog) end},
+            {text=gettext("Save"),callback=function()
                 local fields=dialog:getFields()
                 self.draft.host=fields[1]; self.draft.port=tonumber(fields[2])
                 UIManager:close(dialog); self:show("account")
@@ -180,7 +184,7 @@ function Plugin:verifyAccount()
     local ok,err=pcall(IMAP.validate,self.draft)
     if not ok then self:info(err); return end
     self:startWork(function()
-        self.job_title="正在验证邮箱…"; self.job_item=nil
+        self.job_title=gettext("Verifying mailbox…"); self.job_item=nil
         local window=self:render("progress")
         local completed,result,message=Trapper:dismissableRunInSubprocess(function()
             return IMAP.run(self.draft,function() return true end)
@@ -188,8 +192,8 @@ function Plugin:verifyAccount()
         self.busy=false
         if completed and result then
             self.store:saveConfig(self.draft); self.selected={}; self.page=1
-            self:render("settings"); self:info("邮箱连接成功，配置已保存。")
-        else self:render("account"); if completed then self:info(message or "验证失败，请重试") end end
+            self:render("settings"); self:info(gettext("Mailbox connected. Settings saved."))
+        else self:render("account"); if completed then self:info(message or gettext("Verification failed. Please try again.")) end end
     end)
 end
 
@@ -202,7 +206,7 @@ function Plugin:checkInbox()
         end,window)
         if completed and result then self.store:merge(result) end
         self.busy=false; self:render("inbox")
-        if completed and not result then self:info(message or "检查邮箱失败，请重试") end
+        if completed and not result then self:info(message or gettext("Could not check the mailbox. Please try again.")) end
     end)
 end
 
@@ -223,7 +227,7 @@ function Plugin:downloadItems(items)
         for index,item in ipairs(items) do
             if not self.store:isDownloaded(item) then
                 local temp=self.store:prepare(item,directory)
-                self.job_title=string.format("正在下载 %d / %d",index,#items); self.job_item=item
+                self.job_title=string.format(gettext("Downloading %d / %d"),index,#items); self.job_item=item
                 local window=self:render("progress")
                 self.poll_progress=function()
                     if self.busy and self.window == window then
@@ -243,15 +247,15 @@ function Plugin:downloadItems(items)
                 else
                     self.store:abort()
                     if not completed then cancelled=true; break end
-                    self.results[#self.results+1]={item=item,ok=false,error=message or "下载失败"}
+                    self.results[#self.results+1]={item=item,ok=false,error=message or gettext("Download failed")}
                     self.failed[#self.failed+1]=item
                 end
             end
         end
         local success=0
         for _,result in ipairs(self.results) do if result.ok then success=success+1 end end
-        self.result_title=cancelled and "下载已取消" or #self.failed>0 and "部分下载完成" or "下载完成"
-        self.result_summary=string.format("%d 本成功 · %d 本失败",success,#self.failed)
+        self.result_title=cancelled and gettext("Download cancelled") or #self.failed>0 and gettext("Some downloads failed") or gettext("Downloads complete")
+        self.result_summary=string.format(gettext("%d saved · %d failed"),success,#self.failed)
         self.busy=false; self:render("result")
     end)
 end

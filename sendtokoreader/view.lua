@@ -1,3 +1,4 @@
+local gettext = require("sendtokoreader/i18n")
 local BB = require("ffi/blitbuffer")
 local Device = require("device")
 local Font = require("ui/font")
@@ -19,6 +20,8 @@ local LineWidget = require("ui/widget/linewidget")
 local Button = require("ui/widget/button")
 local ProgressWidget = require("ui/widget/progresswidget")
 local UIManager = require("ui/uimanager")
+local Providers = require("sendtokoreader/providers")
+local Mail = require("sendtokoreader/mail")
 local Screen = Device.screen
 local function px(n) return Screen:scaleBySize(n) end
 local function space(n) return VSpan:new{width=px(n)} end
@@ -46,7 +49,7 @@ end
 function TapArea:onTap() if self.callback then self.callback() end; return true end
 function TapArea:onHold() if self.hold_callback then self.hold_callback() end; return true end
 
-local View = InputContainer:extend{modal=true,covers_fullscreen=true}
+local View = InputContainer:extend{covers_fullscreen=true}
 function View:init()
     self.dimen = Screen:getSize()
     self.width = self.dimen.w-px(32)
@@ -54,11 +57,11 @@ function View:init()
     local p, width = self.plugin, self.width
     local welcome = self.mode == "inbox" and (not p.store.config.username or p.store.config.username == "")
     self.key_events.Back = {{Device.input.group.Back}}
-    local heading = ({inbox="邮件收书",settings="收书设置",account="绑定邮箱",progress="下载电子书",result="下载结果"})[self.mode]
-    local labels = VGroup:new{align="left",text("Send to KOReader",12,width-px(155),true),space(3),text(heading,23,width-px(155))}
+    local heading = ({inbox=gettext("Mail inbox"),settings=gettext("Mail settings"),account=gettext("Link mailbox"),progress=gettext("Download ebooks"),result=gettext("Download results")})[self.mode]
+    local labels = VGroup:new{align="left",text("sendtokoreader",12,width-px(155),true),space(3),text(heading,23,width-px(155))}
     local head = HGroup:new{left(labels,width-px(welcome and 50 or 144),px(65))}
     if not welcome then
-        head[#head+1]=button(self.mode == "inbox" and "设置" or "返回",px(84),function()
+        head[#head+1]=button(self.mode == "inbox" and gettext("Settings") or gettext("Back"),px(84),function()
             if self.mode == "inbox" then p:showSettings() else self:onBack() end
         end,false,not p.busy)
         head[#head+1]=HSpan:new{width=px(10)}
@@ -100,10 +103,10 @@ end
 function View:inbox()
     local p, width = self.plugin, self.width
     if not p.store.config.username or p.store.config.username == "" then
-        self.bind_button=button("绑定邮箱",math.min(width,px(320)),function() p:editAccount() end,true)
+        self.bind_button=button(gettext("Link mailbox"),math.min(width,px(320)),function() p:editAccount() end,true)
         local guide=VGroup:new{align="center",
-            text("用邮箱接收电子书",24,width),space(18),
-            TextBox:new{text="绑定你的邮箱，\n把电子书作为附件发来，就能在这里下载。",
+            text(gettext("Receive ebooks by email"),24,width),space(18),
+            TextBox:new{text=gettext("Link your mailbox.\nSend ebooks as attachments and download them here."),
                 face=Font:getFace("cfont",17),width=width,alignment="center"},
             space(28),self.bind_button,
         }
@@ -111,7 +114,7 @@ function View:inbox()
         return
     end
     local data = p.store.data
-    local check = p.busy and "正在检查邮箱…" or data.checked and ("收件箱 · " .. #data.items .. " 个附件 · " .. os.date("%H:%M",data.checked) .. " 更新") or "收件箱 · 尚未检查"
+    local check = p.busy and gettext("Checking mailbox…") or data.checked and string.format(gettext("Attachments: %d · Updated %s"),#data.items,os.date("%H:%M",data.checked)) or gettext("Inbox · Not checked yet")
     local mailbox = VGroup:new{align="left",text(p.store.config.username,18,width-px(55)),space(5),text(check,13,width-px(55),true)}
     local icon
     if p.busy then icon=text("■",22,px(44))
@@ -141,7 +144,7 @@ function View:inbox()
         local mark=FrameContainer:new{padding=0,margin=0,bordersize=done and 0 or px(1),
             background=BB.COLOR_WHITE,invert=selected and not done,
             CenterContainer:new{dimen=Geom:new{w=px(23),h=px(23)},text((selected or done) and "✓" or "",20,px(23))}}
-        local detail=item.format .. " · " .. p.sizeText(item.size) .. (done and " · 已下载" or (" · " .. item.date:sub(1,11)))
+        local detail=string.format(gettext("%s · %s · %s"),item.format,p.sizeText(item.size),done and gettext("Downloaded") or Mail.dateText(item.date))
         local copy=VGroup:new{align="left",text(item.name,19,width-px(42)),space(5),text(detail,13,width-px(42),true)}
         local row=TapArea:new{width=width,height=row_height,callback=function()
             if not p.busy then p:toggle(item) end
@@ -152,15 +155,15 @@ function View:inbox()
     end
     if #data.items == 0 then
         self:add(space(36))
-        self:add(TextBox:new{text="还没有电子书附件\n\n把电子书作为普通附件发到这个邮箱，然后点击右侧刷新图标。",
+        self:add(TextBox:new{text=gettext("No ebook attachments yet\n\nSend ebooks to this mailbox as regular attachments, then tap the refresh icon."),
             face=Font:getFace("cfont",19),width=width,alignment="center"})
-        self:add(space(12)); self:add(text("暂不支持网盘链接和超大附件",13,width,true))
+        self:add(space(12)); self:add(text(gettext("Cloud links and oversized attachment links are not supported."),13,width,true))
     end
     self:fillBottom()
     if pages>1 then
-        self.previous_button=Button:new{text="‹ 上一页",width=px(100),height=px(44),text_font_size=15,text_font_bold=false,
+        self.previous_button=Button:new{text=gettext("‹ Previous"),width=px(100),height=px(44),text_font_size=15,text_font_bold=false,
             padding=0,bordersize=0,enabled=p.page>1 and not p.busy,callback=function() p:changePage(-1) end}
-        self.next_button=Button:new{text="下一页 ›",width=px(100),height=px(44),text_font_size=15,text_font_bold=false,
+        self.next_button=Button:new{text=gettext("Next ›"),width=px(100),height=px(44),text_font_size=15,text_font_bold=false,
             padding=0,bordersize=0,enabled=p.page<pages and not p.busy,callback=function() p:changePage(1) end}
         self:add(HGroup:new{self.previous_button,
             CenterContainer:new{dimen=Geom:new{w=width-px(200),h=px(44)},text(p.page .. " / " .. pages,13,nil,true)},
@@ -173,14 +176,14 @@ function View:inbox()
         CenterContainer:new{dimen=Geom:new{w=px(23),h=px(23)},text(all and "✓" or selected_on_page>0 and "−" or "",20,px(23))}}
     self.select_page=TapArea:new{width=px(160),height=px(44),callback=function()
         if available>0 and not p.busy then p:selectPage() end
-    end,left(HGroup:new{mark,HSpan:new{width=px(12)},text("全选本页",15,px(120),available==0 or p.busy)},px(160),px(44))}
+    end,left(HGroup:new{mark,HSpan:new{width=px(12)},text(gettext("Select page"),15,px(120),available==0 or p.busy)},px(160),px(44))}
     self:add(HGroup:new{self.select_page,
         RightContainer:new{dimen=Geom:new{w=width-px(160),h=px(44)},
-            text("已选 " .. count .. " 本 · " .. p.sizeText(size),13,width-px(172),true)}})
+            text(string.format(gettext("Selected: %d · %s"),count,p.sizeText(size)),13,width-px(172),true)}})
     self:add(space(8))
-    self.download_button=button(count>0 and ("下载所选（" .. count .. "）") or "请先选择电子书",width,function() p:downloadSelected() end,true,count>0 and not p.busy)
+    self.download_button=button(count>0 and string.format(gettext("Download selected (%d)"),count) or gettext("Select ebooks first"),width,function() p:downloadSelected() end,true,count>0 and not p.busy)
     self:add(self.download_button)
-    self:add(space(8)); self:add(text("保存到：" .. p:downloadDirectory(),12,width,true))
+    self:add(space(8)); self:add(text(string.format(gettext("Save to: %s"),p:downloadDirectory()),12,width,true))
 end
 
 function View:setting(label, value, callback)
@@ -191,63 +194,63 @@ end
 
 function View:settings()
     local p=self.plugin
-    self:setting("收书邮箱",p.store.config.username or "绑定邮箱",function() p:editAccount() end)
-    self:setting("邮件文件夹","收件箱")
-    self:setting("下载目录",p:downloadDirectory(),function() p:chooseDirectory() end)
-    self:setting("收信方式","手动检查 · 首次最近 30 天")
-    self:add(space(18)); self:add(TextBox:new{text="只读取邮件与附件，保留原邮件和已读状态。",face=Font:getFace("cfont",14),width=self.width})
-    self:fillBottom(); self:add(button("返回附件列表",self.width,function() p:show("inbox") end,true))
+    self:setting(gettext("Mailbox"),p.store.config.username or gettext("Link mailbox"),function() p:editAccount() end)
+    self:setting(gettext("Mail folder"),gettext("Inbox"))
+    self:setting(gettext("Download folder"),p:downloadDirectory(),function() p:chooseDirectory() end)
+    self:setting(gettext("Check for mail"),gettext("Manually · Last 30 days on first check"))
+    self:add(space(18)); self:add(TextBox:new{text=gettext("Your emails and their read status are preserved."),face=Font:getFace("cfont",14),width=self.width})
+    self:fillBottom(); self:add(button(gettext("Back to attachments"),self.width,function() p:show("inbox") end,true))
 end
 
 function View:account()
     local p=self.plugin
     local draft=p.draft
-    local provider=({qq="QQ 邮箱",netease="163 邮箱",custom="自定义 IMAP"})[draft.provider] or "自定义 IMAP"
-    self:setting("邮箱服务",provider,function() p:chooseProvider() end)
-    self:setting("邮箱地址",draft.username ~= "" and draft.username or "点击填写邮箱地址",function() p:editField("username","邮箱地址") end)
-    self:setting("客户端授权码",draft.password ~= "" and "••••••••" or "点击填写授权码",function() p:editField("password","客户端授权码") end)
-    self:add(space(12)); self:add(button("如何获取授权码？",self.width,function()
-        p:info("在邮箱网页版设置中开启 IMAP 服务，生成客户端授权码。\n\n这里填写授权码，而不是邮箱登录密码。自定义邮箱须支持 IMAP over TLS 和密码或应用密码认证。")
+    local provider=Providers.get(draft.provider)
+    self:setting(gettext("Mail provider"),gettext(provider.label),function() p:chooseProvider() end)
+    self:setting(gettext("Email address"),draft.username ~= "" and draft.username or gettext("Tap to enter email address"),function() p:editField("username",gettext("Email address")) end)
+    self:setting(gettext(provider.credential),draft.password ~= "" and "••••••••" or gettext("Tap to enter"),function() p:editField("password",gettext(provider.credential)) end)
+    self:add(space(12)); self:add(button(gettext("How do I sign in?"),self.width,function()
+        p:info(gettext(provider.help))
     end))
-    self:add(space(10)); self:add(button("服务器设置 ›",self.width,function() p:editServer() end))
-    self:fillBottom(); self:add(button("验证并保存",self.width,function() p:verifyAccount() end,true))
+    self:add(space(10)); self:add(button(gettext("Server settings ›"),self.width,function() p:editServer() end))
+    self:fillBottom(); self:add(button(gettext("Verify and save"),self.width,function() p:verifyAccount() end,true))
 end
 
 function View:progressPage()
     local p=self.plugin
-    self:add(space(45)); self:add(text(p.job_title or "正在连接邮箱…",22,self.width))
+    self:add(space(45)); self:add(text(p.job_title or gettext("Connecting to mailbox…"),22,self.width))
     self:add(space(20)); self:add(text(p.job_item and p.job_item.name or "",18,self.width))
     self:add(space(20))
     self.progress=ProgressWidget:new{width=self.width,height=px(14),percentage=0,bordersize=0,margin_h=0,margin_v=0,
         fillcolor=BB.COLOR_BLACK,bgcolor=BB.COLOR_LIGHT_GRAY}
     self:add(self.progress)
-    self:add(space(15)); self.progress_text=text("正在连接…",15,self.width,true); self:add(self.progress_text)
+    self:add(space(15)); self.progress_text=text(gettext("Connecting…"),15,self.width,true); self:add(self.progress_text)
     self:fillBottom()
-    self:add(button("取消",self.width,function() p:cancelWork(self) end))
-    self:add(space(12)); self:add(text("已下载完成的电子书会保留",13,self.width,true))
+    self:add(button(gettext("Cancel"),self.width,function() p:cancelWork(self) end))
+    self:add(space(12)); self:add(text(gettext("Completed downloads will be kept."),13,self.width,true))
 end
 
 function View:updateProgress(bytes,total)
     self.progress.percentage=math.min(.99,total>0 and bytes/total or 0)
-    self.progress_text:setText("已接收 " .. self.plugin.sizeText(bytes))
+    self.progress_text:setText(string.format(gettext("Received: %s"),self.plugin.sizeText(bytes)))
     UIManager:setDirty(self,"ui")
 end
 
 function View:resultPage()
     local p=self.plugin
-    self:add(space(32)); self:add(text(p.result_title or "下载完成",23,self.width))
+    self:add(space(32)); self:add(text(p.result_title or gettext("Downloads complete"),23,self.width))
     self:add(space(16)); self:add(text(p.result_summary or "",17,self.width))
     self:add(space(25))
     -- Keep results within the small screen; complete details remain in the attachment list.
     for index=1,math.min(4,#p.results) do
         local result=p.results[index]
         self:add(text((result.ok and "✓ " or "! ") .. result.item.name,18,self.width))
-        self:add(space(6)); self:add(text(result.ok and "已保存" or result.error,13,self.width,true)); self:add(space(16))
+        self:add(space(6)); self:add(text(result.ok and gettext("Saved") or result.error,13,self.width,true)); self:add(space(16))
     end
-    self:add(text("保存到：" .. p:downloadDirectory(),13,self.width,true))
+    self:add(text(string.format(gettext("Save to: %s"),p:downloadDirectory()),13,self.width,true))
     self:fillBottom()
-    if #p.failed>0 then self:add(button("重试失败项",self.width,function() p:downloadItems(p.failed) end,true)); self:add(space(12)) end
-    self:add(button("返回附件列表",self.width,function() p:show("inbox") end,#p.failed==0))
+    if #p.failed>0 then self:add(button(gettext("Retry failed downloads"),self.width,function() p:downloadItems(p.failed) end,true)); self:add(space(12)) end
+    self:add(button(gettext("Back to attachments"),self.width,function() p:show("inbox") end,#p.failed==0))
 end
 
 return View

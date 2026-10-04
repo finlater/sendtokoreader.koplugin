@@ -1,0 +1,515 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-04 00:00+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#, lua-format
+msgid "%.1f KB"
+msgstr ""
+
+#, lua-format
+msgid "%.1f MB"
+msgstr ""
+
+#, lua-format
+msgid "%d B"
+msgstr ""
+
+#, lua-format
+msgid "%d saved · %d failed"
+msgstr ""
+
+#, lua-format
+msgid "%s · %s · %s"
+msgstr ""
+
+msgid "126 Mail"
+msgstr ""
+
+msgid "163 Mail"
+msgstr ""
+
+msgid "AOL Mail"
+msgstr ""
+
+msgid "App password"
+msgstr ""
+
+msgid ""
+"Ask your provider for its IMAP hostname, TLS port and password or app "
+"password. Only implicit TLS with password authentication is supported. Self-"
+"hosted Exchange works only if its administrator enables compatible IMAP "
+"access. OAuth, Exchange Web Services and ActiveSync are not supported."
+msgstr ""
+
+msgid "Attachment size changed. Please refresh the inbox."
+msgstr ""
+
+msgid "Attachment transfer interrupted. Please retry."
+msgstr ""
+
+#, lua-format
+msgid "Attachments: %d · Updated %s"
+msgstr ""
+
+msgid "Authorization code"
+msgstr ""
+
+msgid "Back"
+msgstr ""
+
+msgid "Back to attachments"
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
+msgid "Check for mail"
+msgstr ""
+
+msgid "Checking mailbox…"
+msgstr ""
+
+msgid "Choose a download folder."
+msgstr ""
+
+msgid "Cloud links and oversized attachment links are not supported."
+msgstr ""
+
+msgid "Completed downloads will be kept."
+msgstr ""
+
+msgid "Connecting to mailbox…"
+msgstr ""
+
+msgid "Connecting…"
+msgstr ""
+
+msgid "Could not check the mailbox. Please try again."
+msgstr ""
+
+msgid "Could not close the history file."
+msgstr ""
+
+msgid "Could not connect to the mail server."
+msgstr ""
+
+msgid "Could not create a file in the download folder."
+msgstr ""
+
+msgid "Could not create the temporary download file."
+msgstr ""
+
+msgid "Could not finalize the downloaded attachment."
+msgstr ""
+
+msgid "Could not initialize a secure connection."
+msgstr ""
+
+msgid "Could not open the inbox in read-only mode."
+msgstr ""
+
+msgid "Could not save mailbox settings."
+msgstr ""
+
+msgid "Could not send the mail request."
+msgstr ""
+
+msgid "Could not write download history."
+msgstr ""
+
+msgid "Could not write mailbox settings."
+msgstr ""
+
+msgid "Could not write the attachment."
+msgstr ""
+
+msgid "Data after base64 padding"
+msgstr ""
+
+msgid "Download cancelled"
+msgstr ""
+
+msgid "Download ebooks"
+msgstr ""
+
+msgid "Download failed"
+msgstr ""
+
+msgid "Download folder"
+msgstr ""
+
+msgid "Download results"
+msgstr ""
+
+#, lua-format
+msgid "Download selected (%d)"
+msgstr ""
+
+msgid "Downloaded"
+msgstr ""
+
+#, lua-format
+msgid "Downloading %d / %d"
+msgstr ""
+
+msgid "Downloads complete"
+msgstr ""
+
+msgid "Email address"
+msgstr ""
+
+msgid ""
+"Enable 2-Step Verification in your Google Account, then create an app "
+"password at myaccount.google.com/apppasswords. Use your full email address. "
+"If app passwords are unavailable or your administrator requires OAuth, this "
+"account is not supported yet."
+msgstr ""
+
+msgid ""
+"Enable two-factor authentication for your Apple Account, then create an app-"
+"specific password at account.apple.com. Enter your full iCloud Mail address "
+"and that password. Your regular Apple Account password will not work."
+msgstr ""
+
+msgid "Enter the IMAP hostname without a URL or port."
+msgstr ""
+
+msgid "Enter your email address."
+msgstr ""
+
+msgid "Enter your password or app password."
+msgstr ""
+
+msgid "Google (Gmail)"
+msgstr ""
+
+msgid "How do I sign in?"
+msgstr ""
+
+msgid "IMAP nesting limit exceeded"
+msgstr ""
+
+msgid "IMAP server"
+msgstr ""
+
+msgid "IMAP token limit exceeded"
+msgstr ""
+
+msgid ""
+"In 126 webmail settings, enable IMAP/SMTP and generate a client "
+"authorization code. Enter your full email address and the authorization "
+"code, not your webmail password."
+msgstr ""
+
+msgid ""
+"In 163 webmail settings, enable IMAP/SMTP and generate a client "
+"authorization code. Enter your full email address and the authorization "
+"code, not your webmail password."
+msgstr ""
+
+msgid ""
+"In AOL Account Security, generate a third-party app password. Enter your "
+"full email address and that password. If AOL does not allow your account to "
+"generate app passwords, this account is not supported yet."
+msgstr ""
+
+msgid ""
+"In QQ Mail settings, enable IMAP/SMTP and generate an authorization code. "
+"Enter your full email address and the authorization code, not your QQ "
+"password."
+msgstr ""
+
+msgid ""
+"In Yahoo Account Security, generate a third-party app password. Enter your "
+"full email address and that password. If Yahoo does not allow your account "
+"to generate app passwords, this account is not supported yet."
+msgstr ""
+
+msgid "Inbox"
+msgstr ""
+
+msgid "Inbox · Not checked yet"
+msgstr ""
+
+msgid "Incomplete IMAP list"
+msgstr ""
+
+msgid "Incomplete IMAP string"
+msgstr ""
+
+msgid "Invalid FETCH response"
+msgstr ""
+
+msgid "Invalid IMAP string"
+msgstr ""
+
+msgid "Invalid IMAP token"
+msgstr ""
+
+msgid "Invalid MIME section"
+msgstr ""
+
+msgid "Invalid UID"
+msgstr ""
+
+msgid "Invalid base64 attachment"
+msgstr ""
+
+msgid "Invalid base64 padding"
+msgstr ""
+
+msgid "Invalid filename encoding"
+msgstr ""
+
+msgid "Invalid port"
+msgstr ""
+
+msgid "Invalid quoted-printable attachment"
+msgstr ""
+
+msgid "Link an IMAP mailbox to check and download ebook attachments."
+msgstr ""
+
+msgid "Link mailbox"
+msgstr ""
+
+msgid ""
+"Link your mailbox.\n"
+"Send ebooks as attachments and download them here."
+msgstr ""
+
+msgid "Mail folder"
+msgstr ""
+
+msgid "Mail inbox"
+msgstr ""
+
+msgid "Mail provider"
+msgstr ""
+
+msgid "Mail settings"
+msgstr ""
+
+msgid "Mailbox"
+msgstr ""
+
+msgid "Mailbox connected. Settings saved."
+msgstr ""
+
+msgid "Mailbox identifiers changed. Please refresh the inbox."
+msgstr ""
+
+#, lua-format
+msgid ""
+"Mailbox settings or download history are damaged. Keep the file and check: %s"
+msgstr ""
+
+msgid "Manually · Last 30 days on first check"
+msgstr ""
+
+msgid ""
+"More than 10,000 new messages. Please use a dedicated mailbox for ebooks."
+msgstr ""
+
+msgid "Next ›"
+msgstr ""
+
+msgid ""
+"No ebook attachments yet\n"
+"\n"
+"Send ebooks to this mailbox as regular attachments, then tap the refresh "
+"icon."
+msgstr ""
+
+msgid "Not enough space in the download folder."
+msgstr ""
+
+msgid "Not enough storage space, or writing failed."
+msgstr ""
+
+msgid "Other mailbox"
+msgstr ""
+
+msgid "Outlook / Exchange support"
+msgstr ""
+
+msgid ""
+"Outlook.com and Exchange Online require OAuth sign-in, which is not "
+"supported in this version. App passwords do not replace OAuth for these "
+"services. Use another mailbox for now. For self-hosted Exchange, ask your "
+"administrator whether password-based IMAP over TLS is available, then choose "
+"Other mailbox."
+msgstr ""
+
+msgid "Password or app password"
+msgstr ""
+
+msgid "Port"
+msgstr ""
+
+msgid "QQ Mail"
+msgstr ""
+
+msgid "Receive ebooks by email"
+msgstr ""
+
+#, lua-format
+msgid "Received: %s"
+msgstr ""
+
+msgid "Retry failed downloads"
+msgstr ""
+
+msgid "Save"
+msgstr ""
+
+#, lua-format
+msgid "Save to: %s"
+msgstr ""
+
+msgid "Saved"
+msgstr ""
+
+msgid "Select ebooks first"
+msgstr ""
+
+msgid "Select page"
+msgstr ""
+
+#, lua-format
+msgid "Selected: %d · %s"
+msgstr ""
+
+msgid "Server settings · TLS"
+msgstr ""
+
+msgid "Server settings ›"
+msgstr ""
+
+msgid "Set up a mailbox first."
+msgstr ""
+
+msgid "Settings"
+msgstr ""
+
+msgid "Sign-in failed. Check IMAP access and your password or app password."
+msgstr ""
+
+msgid "Some downloads failed"
+msgstr ""
+
+msgid ""
+"TLS verification failed. Check the server name, system date and CA "
+"certificates."
+msgstr ""
+
+msgid "Tap to enter"
+msgstr ""
+
+msgid "Tap to enter email address"
+msgstr ""
+
+msgid "The TLS certificate does not match the mail server name."
+msgstr ""
+
+msgid "The attachment is missing or incomplete."
+msgstr ""
+
+msgid "The downloaded file size does not match."
+msgstr ""
+
+msgid "The mail connection was interrupted or timed out."
+msgstr ""
+
+msgid "The mail server closed the connection."
+msgstr ""
+
+msgid "The mail server did not return an IMAP ready response."
+msgstr ""
+
+msgid "The mail server rejected the request."
+msgstr ""
+
+msgid "The mail server response exceeded the safety limit."
+msgstr ""
+
+msgid "The mail server response is too large."
+msgstr ""
+
+msgid "The message is missing its attachment structure."
+msgstr ""
+
+msgid "The message metadata is too large."
+msgstr ""
+
+msgid ""
+"The server did not provide UIDVALIDITY. Download history cannot be tracked "
+"safely."
+msgstr ""
+
+msgid "The server did not provide a TLS certificate."
+msgstr ""
+
+msgid "The server requires an unsupported authentication method."
+msgstr ""
+
+msgid "Too many files with the same name."
+msgstr ""
+
+msgid "Truncated base64 attachment"
+msgstr ""
+
+msgid "Unexpected attachment response"
+msgstr ""
+
+msgid "Unknown date"
+msgstr ""
+
+#, lua-format
+msgid "Unsupported attachment encoding: %s"
+msgstr ""
+
+msgid "Unsupported charset"
+msgstr ""
+
+msgid "Verification failed. Please try again."
+msgstr ""
+
+msgid "Verify and save"
+msgstr ""
+
+msgid "Verifying mailbox…"
+msgstr ""
+
+msgid "Yahoo Mail"
+msgstr ""
+
+msgid "Your emails and their read status are preserved."
+msgstr ""
+
+msgid "attachment"
+msgstr ""
+
+msgid "iCloud"
+msgstr ""
+
+msgid "sendtokoreader · Mail inbox"
+msgstr ""
+
+msgid "‹ Previous"
+msgstr ""

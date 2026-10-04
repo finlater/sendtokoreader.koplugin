@@ -1,0 +1,466 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: sendtokoreader 0.1.0\n"
+"Report-Msgid-Bugs-To: https://github.com/finlater/sendtokoreader.koplugin/issues\n"
+"PO-Revision-Date: 2026-10-04 00:00+0800\n"
+"Last-Translator: sendtokoreader contributors\n"
+"Language-Team: Simplified Chinese\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#, lua-format
+msgid "%.1f KB"
+msgstr "%.1f 千字节"
+
+#, lua-format
+msgid "%.1f MB"
+msgstr "%.1f 兆字节"
+
+#, lua-format
+msgid "%d B"
+msgstr "%d 字节"
+
+#, lua-format
+msgid "%d saved · %d failed"
+msgstr "%d 本成功 · %d 本失败"
+
+#, lua-format
+msgid "%s · %s · %s"
+msgstr "%s · %s · %s"
+
+msgid "126 Mail"
+msgstr "126 邮箱"
+
+msgid "163 Mail"
+msgstr "163 邮箱"
+
+msgid "AOL Mail"
+msgstr "美国在线邮箱"
+
+msgid "App password"
+msgstr "应用专用密码"
+
+msgid "Ask your provider for its IMAP hostname, TLS port and password or app password. Only implicit TLS with password authentication is supported. Self-hosted Exchange works only if its administrator enables compatible IMAP access. OAuth, Exchange Web Services and ActiveSync are not supported."
+msgstr "向服务商获取收信服务器主机名、安全连接端口及密码或应用专用密码。仅支持直接建立加密连接的密码认证。自建企业邮箱须由管理员开启兼容的收信服务；不支持浏览器授权登录或微软专有邮件协议。"
+
+msgid "Attachment size changed. Please refresh the inbox."
+msgstr "附件大小已变化，请重新检查邮箱"
+
+msgid "Attachment transfer interrupted. Please retry."
+msgstr "附件传输中断，请重新下载"
+
+#, lua-format
+msgid "Attachments: %d · Updated %s"
+msgstr "收件箱 · %d 个附件 · %s 更新"
+
+msgid "Authorization code"
+msgstr "客户端授权码"
+
+msgid "Back"
+msgstr "返回"
+
+msgid "Back to attachments"
+msgstr "返回附件列表"
+
+msgid "Cancel"
+msgstr "取消"
+
+msgid "Check for mail"
+msgstr "收信方式"
+
+msgid "Checking mailbox…"
+msgstr "正在检查邮箱…"
+
+msgid "Choose a download folder."
+msgstr "请选择下载目录"
+
+msgid "Cloud links and oversized attachment links are not supported."
+msgstr "暂不支持网盘链接和超大附件链接"
+
+msgid "Completed downloads will be kept."
+msgstr "已下载完成的电子书会保留"
+
+msgid "Connecting to mailbox…"
+msgstr "正在连接邮箱…"
+
+msgid "Connecting…"
+msgstr "正在连接…"
+
+msgid "Could not check the mailbox. Please try again."
+msgstr "检查邮箱失败，请重试"
+
+msgid "Could not close the history file."
+msgstr "关闭记录文件失败"
+
+msgid "Could not connect to the mail server."
+msgstr "无法连接到邮箱服务器"
+
+msgid "Could not create a file in the download folder."
+msgstr "无法在下载目录创建文件"
+
+msgid "Could not create the temporary download file."
+msgstr "无法创建下载临时文件"
+
+msgid "Could not finalize the downloaded attachment."
+msgstr "无法完成附件落盘"
+
+msgid "Could not initialize a secure connection."
+msgstr "无法初始化安全连接"
+
+msgid "Could not open the inbox in read-only mode."
+msgstr "无法只读打开收件箱"
+
+msgid "Could not save mailbox settings."
+msgstr "保存收书配置失败"
+
+msgid "Could not send the mail request."
+msgstr "发送邮箱请求失败"
+
+msgid "Could not write download history."
+msgstr "写入收书记录失败"
+
+msgid "Could not write mailbox settings."
+msgstr "无法写入收书配置"
+
+msgid "Could not write the attachment."
+msgstr "附件写入失败"
+
+msgid "Data after base64 padding"
+msgstr "附件编码结束后存在多余数据"
+
+msgid "Download cancelled"
+msgstr "下载已取消"
+
+msgid "Download ebooks"
+msgstr "下载电子书"
+
+msgid "Download failed"
+msgstr "下载失败"
+
+msgid "Download folder"
+msgstr "下载目录"
+
+msgid "Download results"
+msgstr "下载结果"
+
+#, lua-format
+msgid "Download selected (%d)"
+msgstr "下载所选（%d）"
+
+msgid "Downloaded"
+msgstr "已下载"
+
+#, lua-format
+msgid "Downloading %d / %d"
+msgstr "正在下载 %d / %d"
+
+msgid "Downloads complete"
+msgstr "下载完成"
+
+msgid "Email address"
+msgstr "邮箱地址"
+
+msgid "Enable 2-Step Verification in your Google Account, then create an app password at myaccount.google.com/apppasswords. Use your full email address. If app passwords are unavailable or your administrator requires OAuth, this account is not supported yet."
+msgstr "为谷歌账户开启两步验证，然后在 myaccount.google.com/apppasswords 创建应用专用密码。填写完整邮箱地址。如果账户无法生成应用专用密码，或管理员要求浏览器授权登录，当前版本暂不支持该账户。"
+
+msgid "Enable two-factor authentication for your Apple Account, then create an app-specific password at account.apple.com. Enter your full iCloud Mail address and that password. Your regular Apple Account password will not work."
+msgstr "为苹果账户开启双重认证，然后在 account.apple.com 创建应用专用密码。填写完整的苹果邮箱地址及该密码，不能使用苹果账户的普通登录密码。"
+
+msgid "Enter the IMAP hostname without a URL or port."
+msgstr "收信服务器应填写主机名，不包含网址或端口"
+
+msgid "Enter your email address."
+msgstr "请填写邮箱地址"
+
+msgid "Enter your password or app password."
+msgstr "请填写密码、应用专用密码或客户端授权码"
+
+msgid "Google (Gmail)"
+msgstr "谷歌邮箱"
+
+msgid "How do I sign in?"
+msgstr "如何登录？"
+
+msgid "IMAP nesting limit exceeded"
+msgstr "邮件结构嵌套层数超过限制"
+
+msgid "IMAP server"
+msgstr "收信服务器"
+
+msgid "IMAP token limit exceeded"
+msgstr "邮件结构字段数超过限制"
+
+msgid "In 126 webmail settings, enable IMAP/SMTP and generate a client authorization code. Enter your full email address and the authorization code, not your webmail password."
+msgstr "在 126 邮箱网页版设置中开启收发信服务，生成客户端授权码。填写完整邮箱地址及授权码，不要填写网页版登录密码。"
+
+msgid "In 163 webmail settings, enable IMAP/SMTP and generate a client authorization code. Enter your full email address and the authorization code, not your webmail password."
+msgstr "在 163 邮箱网页版设置中开启收发信服务，生成客户端授权码。填写完整邮箱地址及授权码，不要填写网页版登录密码。"
+
+msgid "In AOL Account Security, generate a third-party app password. Enter your full email address and that password. If AOL does not allow your account to generate app passwords, this account is not supported yet."
+msgstr "在美国在线账户的安全设置中生成第三方应用密码，填写完整邮箱地址和该密码。如果账户无法生成应用密码，当前版本暂不支持该账户。"
+
+msgid "In QQ Mail settings, enable IMAP/SMTP and generate an authorization code. Enter your full email address and the authorization code, not your QQ password."
+msgstr "在 QQ 邮箱设置中开启收发信服务，生成授权码。填写完整邮箱地址及授权码，不要填写 QQ 登录密码。"
+
+msgid "In Yahoo Account Security, generate a third-party app password. Enter your full email address and that password. If Yahoo does not allow your account to generate app passwords, this account is not supported yet."
+msgstr "在雅虎账户的安全设置中生成第三方应用密码，填写完整邮箱地址和该密码。如果账户无法生成应用密码，当前版本暂不支持该账户。"
+
+msgid "Inbox"
+msgstr "收件箱"
+
+msgid "Inbox · Not checked yet"
+msgstr "收件箱 · 尚未检查"
+
+msgid "Incomplete IMAP list"
+msgstr "邮件结构列表不完整"
+
+msgid "Incomplete IMAP string"
+msgstr "邮件结构字符串不完整"
+
+msgid "Invalid FETCH response"
+msgstr "邮件读取响应无效"
+
+msgid "Invalid IMAP string"
+msgstr "邮箱请求中包含无效字符"
+
+msgid "Invalid IMAP token"
+msgstr "邮件结构字段无效"
+
+msgid "Invalid MIME section"
+msgstr "附件段落标识无效"
+
+msgid "Invalid UID"
+msgstr "邮件标识无效"
+
+msgid "Invalid base64 attachment"
+msgstr "附件编码无效"
+
+msgid "Invalid base64 padding"
+msgstr "附件编码填充无效"
+
+msgid "Invalid filename encoding"
+msgstr "文件名编码无效"
+
+msgid "Invalid port"
+msgstr "端口无效"
+
+msgid "Invalid quoted-printable attachment"
+msgstr "附件的可打印编码无效"
+
+msgid "Link an IMAP mailbox to check and download ebook attachments."
+msgstr "绑定邮箱，手动检查并下载电子书附件。"
+
+msgid "Link mailbox"
+msgstr "绑定邮箱"
+
+msgid "Link your mailbox.\nSend ebooks as attachments and download them here."
+msgstr "绑定你的邮箱，\n把电子书作为附件发来，就能在这里下载。"
+
+msgid "Mail folder"
+msgstr "邮件文件夹"
+
+msgid "Mail inbox"
+msgstr "邮件收书"
+
+msgid "Mail provider"
+msgstr "邮箱服务"
+
+msgid "Mail settings"
+msgstr "收书设置"
+
+msgid "Mailbox"
+msgstr "收书邮箱"
+
+msgid "Mailbox connected. Settings saved."
+msgstr "邮箱连接成功，配置已保存。"
+
+msgid "Mailbox identifiers changed. Please refresh the inbox."
+msgstr "邮箱内容标识已变化，请重新检查邮箱"
+
+#, lua-format
+msgid "Mailbox settings or download history are damaged. Keep the file and check: %s"
+msgstr "收书配置或下载记录损坏，请保留文件并检查：%s"
+
+msgid "Manually · Last 30 days on first check"
+msgstr "手动检查 · 首次最近 30 天"
+
+msgid "More than 10,000 new messages. Please use a dedicated mailbox for ebooks."
+msgstr "本次新增邮件超过 10000 封，请使用专门的收书邮箱"
+
+msgid "Next ›"
+msgstr "下一页 ›"
+
+msgid "No ebook attachments yet\n\nSend ebooks to this mailbox as regular attachments, then tap the refresh icon."
+msgstr "还没有电子书附件\n\n把电子书作为普通附件发到这个邮箱，然后点击右侧刷新图标。"
+
+msgid "Not enough space in the download folder."
+msgstr "下载目录可用空间不足"
+
+msgid "Not enough storage space, or writing failed."
+msgstr "存储空间不足或写入失败"
+
+msgid "Other mailbox"
+msgstr "其他邮箱"
+
+msgid "Outlook / Exchange support"
+msgstr "微软邮箱支持情况"
+
+msgid "Outlook.com and Exchange Online require OAuth sign-in, which is not supported in this version. App passwords do not replace OAuth for these services. Use another mailbox for now. For self-hosted Exchange, ask your administrator whether password-based IMAP over TLS is available, then choose Other mailbox."
+msgstr "微软个人邮箱和在线企业邮箱要求授权登录，当前版本暂不支持，应用密码也不能替代这种授权。请暂时使用其他邮箱。自建企业邮箱可向管理员确认是否支持加密连接和密码认证，再选择“其他邮箱”配置。"
+
+msgid "Password or app password"
+msgstr "密码或应用专用密码"
+
+msgid "Port"
+msgstr "端口"
+
+msgid "QQ Mail"
+msgstr "QQ 邮箱"
+
+msgid "Receive ebooks by email"
+msgstr "用邮箱接收电子书"
+
+#, lua-format
+msgid "Received: %s"
+msgstr "已接收 %s"
+
+msgid "Retry failed downloads"
+msgstr "重试失败项"
+
+msgid "Save"
+msgstr "保存"
+
+#, lua-format
+msgid "Save to: %s"
+msgstr "保存到：%s"
+
+msgid "Saved"
+msgstr "已保存"
+
+msgid "Select ebooks first"
+msgstr "请先选择电子书"
+
+msgid "Select page"
+msgstr "全选本页"
+
+#, lua-format
+msgid "Selected: %d · %s"
+msgstr "已选 %d 本 · %s"
+
+msgid "Server settings · TLS"
+msgstr "服务器设置 · 安全连接"
+
+msgid "Server settings ›"
+msgstr "服务器设置 ›"
+
+msgid "Set up a mailbox first."
+msgstr "请先配置邮箱"
+
+msgid "Settings"
+msgstr "设置"
+
+msgid "Sign-in failed. Check IMAP access and your password or app password."
+msgstr "登录失败，请检查收信服务和密码、应用专用密码或客户端授权码"
+
+msgid "Some downloads failed"
+msgstr "部分下载失败"
+
+msgid "TLS verification failed. Check the server name, system date and CA certificates."
+msgstr "安全连接验证失败，请检查服务器名称、系统日期及证书"
+
+msgid "Tap to enter"
+msgstr "点击填写"
+
+msgid "Tap to enter email address"
+msgstr "点击填写邮箱地址"
+
+msgid "The TLS certificate does not match the mail server name."
+msgstr "安全证书与邮箱服务器名称不匹配"
+
+msgid "The attachment is missing or incomplete."
+msgstr "附件不存在或传输不完整"
+
+msgid "The downloaded file size does not match."
+msgstr "下载文件大小不一致"
+
+msgid "The mail connection was interrupted or timed out."
+msgstr "邮箱连接中断或超时"
+
+msgid "The mail server closed the connection."
+msgstr "邮箱服务器断开了连接"
+
+msgid "The mail server did not return an IMAP ready response."
+msgstr "邮箱服务器未返回就绪响应"
+
+msgid "The mail server rejected the request."
+msgstr "邮箱拒绝了请求"
+
+msgid "The mail server response exceeded the safety limit."
+msgstr "邮箱响应超过安全上限"
+
+msgid "The mail server response is too large."
+msgstr "邮箱响应过大"
+
+msgid "The message is missing its attachment structure."
+msgstr "邮件缺少附件结构信息"
+
+msgid "The message metadata is too large."
+msgstr "邮件元数据过大"
+
+msgid "The server did not provide UIDVALIDITY. Download history cannot be tracked safely."
+msgstr "服务器未提供邮件标识，无法安全记录下载状态"
+
+msgid "The server did not provide a TLS certificate."
+msgstr "服务器未提供安全证书"
+
+msgid "The server requires an unsupported authentication method."
+msgstr "邮箱要求当前客户端不支持的认证方式"
+
+msgid "Too many files with the same name."
+msgstr "同名文件过多"
+
+msgid "Truncated base64 attachment"
+msgstr "附件编码数据不完整"
+
+msgid "Unexpected attachment response"
+msgstr "附件响应异常"
+
+msgid "Unknown date"
+msgstr "日期未知"
+
+#, lua-format
+msgid "Unsupported attachment encoding: %s"
+msgstr "不支持的附件编码：%s"
+
+msgid "Unsupported charset"
+msgstr "不支持此字符集"
+
+msgid "Verification failed. Please try again."
+msgstr "验证失败，请重试"
+
+msgid "Verify and save"
+msgstr "验证并保存"
+
+msgid "Verifying mailbox…"
+msgstr "正在验证邮箱…"
+
+msgid "Yahoo Mail"
+msgstr "雅虎邮箱"
+
+msgid "Your emails and their read status are preserved."
+msgstr "只读取邮件与附件，保留原邮件和已读状态。"
+
+msgid "attachment"
+msgstr "附件"
+
+msgid "iCloud"
+msgstr "苹果邮箱"
+
+msgid "sendtokoreader · Mail inbox"
+msgstr "sendtokoreader · 邮件收书"
+
+msgid "‹ Previous"
+msgstr "‹ 上一页"

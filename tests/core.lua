@@ -6,6 +6,31 @@ local Mail, IMAP, Store = require('sendtokoreader/mail'), require('sendtokoreade
 local function read(path) local f=assert(io.open(path,'rb')); local s=f:read('*a'); f:close(); return s end
 local config=json.decode(read(fixture..'/config.json'))
 local function check(v, message) assert(v,message); print('PASS '..message) end
+local _ = require('sendtokoreader/i18n')
+local core = require('gettext')
+local Providers = require('sendtokoreader/providers')
+local original = core('Settings')
+check(_('Settings') == 'Settings','English fallback')
+G_reader_settings = require('luasettings'):open(fixture..'/language.lua')
+G_reader_settings:saveSetting('language','zh_CN')
+check(_('Settings') == '设置' and core('Settings') == original,'Chinese catalog isolated from KOReader')
+G_reader_settings:saveSetting('language','zh_CN.UTF-8')
+check(_('Settings') == '设置','locale encoding suffix')
+G_reader_settings:saveSetting('language','fr_FR')
+check(_('Settings') == 'Settings','unsupported language falls back to English')
+G_reader_settings:saveSetting('language','en_US')
+check(_('Settings') == 'Settings','language switches without stale translations')
+check(Mail.dateText('04-Oct-2026 12:00:00 +0800') == '2026-10-04','numeric date in every language')
+local draft={provider='netease',password='old-secret',ca_file='old-ca',username='reader@example.test'}
+local hosts={icloud='imap.mail.me.com',gmail='imap.gmail.com',yahoo='imap.mail.yahoo.com',aol='imap.aol.com',netease='imap.163.com',netease126='imap.126.com',qq='imap.qq.com',custom=''}
+for _,provider in ipairs(Providers) do
+    Providers.select(draft,provider.id)
+    check(draft.host == hosts[provider.id] and draft.port == 993 and draft.password == '' and not draft.ca_file,'provider preset '..provider.id)
+    draft.password='new-secret'
+    Providers.select(draft,provider.id)
+    check(draft.password == 'new-secret','same provider preserves credentials')
+end
+check(#Providers == 8 and Providers.oauthNotice():find('not supported',1,true),'OAuth providers explicitly unavailable')
 check(Mail.decodeWords('=?UTF-8?B?5Lit5paHLnR4dA==?=') == '中文.txt','UTF-8 filename')
 check(Mail.decodeWords('=?GB18030?B?1tDOxMu1w/cudHh0?=') == '中文说明.txt','GB18030 filename')
 check(Mail.safeFilename('../../book.epub') == '_.._.._book.epub','path traversal filename')
@@ -22,11 +47,11 @@ for _,case in ipairs({{'base64','===='},{'base64','SGk'},{'quoted-printable','ba
 end
 local bad={}; for k,v in pairs(config) do bad[k]=v end
 bad.password='wrong'; local result,err=IMAP.run(bad,IMAP.list)
-check(not result and err:find('登录失败',1,true),'authentication error')
+check(not result and err:find('Sign-in failed',1,true),'authentication error')
 bad.password=config.password; bad.ca_file=nil; result,err=IMAP.run(bad,IMAP.list)
 check(not result and err:find('TLS',1,true),'untrusted CA rejected')
 bad.ca_file=config.ca_file; bad.host='127.0.0.1'; result,err=IMAP.run(bad,IMAP.list)
-check(not result and err:find('名称不匹配',1,true),'certificate hostname rejected')
+check(not result and err:find('does not match',1,true),'certificate hostname rejected')
 local scan=assert(IMAP.run(config,IMAP.list))
 check(#scan.items==5 and scan.validity==987 and scan.last_uid==6,'BODYSTRUCTURE lists ebooks and skips zip')
 check(scan.items[1].name=='邮件收书测试.epub' and scan.items[2].name==scan.items[1].name and scan.items[3].name=='中文说明.txt','RFC2047 RFC2231 Chinese filenames')
@@ -46,7 +71,7 @@ local incremental=assert(IMAP.run(config,IMAP.list,store.data))
 check(#incremental.items==0 and incremental.last_uid==6,'incremental scan filters inverted UID range')
 local broken=scan.items[5]; local temp=store:prepare(broken,directory)
 result,err=IMAP.run(config,IMAP.download,broken,temp)
-check(not result and err:find('附件传输中断',1,true) and not lfs.attributes(temp),'interrupted transfer removes partial file')
+check(not result and err:find('Attachment transfer interrupted',1,true) and not lfs.attributes(temp),'interrupted transfer removes partial file')
 store:abort()
 local old=store.data.last_uid
 store.data.last_uid=4; local delta=assert(IMAP.run(config,IMAP.list,store.data))

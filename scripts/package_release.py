@@ -27,6 +27,7 @@ def release_notes():
 def build(output):
     files = [ROOT/name for name in ('main.lua','_meta.lua','LICENSE','README.md','README_CN.md')]
     files += sorted((ROOT/'sendtokoreader').glob('*.lua'))
+    files += sorted((ROOT/'l10n').rglob('*.mo'))
     files += [ROOT/'icons/refresh.svg', ROOT/'icons/LICENSE']
     output.parent.mkdir(parents=True,exist_ok=True)
     with zipfile.ZipFile(output,'w',zipfile.ZIP_DEFLATED) as archive:

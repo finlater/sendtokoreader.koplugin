@@ -23,7 +23,7 @@ jobs:
       - name: Install Lua tooling
         run: |
           sudo apt-get update
-          sudo apt-get install -y luajit luarocks
+          sudo apt-get install -y luajit luarocks gettext
           sudo luarocks install luacheck
       - name: Lua static and syntax checks
         run: |
@@ -33,6 +33,7 @@ jobs:
       - name: Python syntax and release package
         run: |
           python3 -m py_compile scripts/*.py tests/*.py
+          python3 scripts/check_translations.py
           python3 scripts/package_release.py
       - name: Upload installable package
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6

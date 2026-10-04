@@ -1,19 +1,27 @@
+local gettext = require("sendtokoreader/i18n")
 -- IMAP BODYSTRUCTURE and MIME filename/transfer decoding. No whole-message buffering.
 local mime = require("mime")
 local Mail = {}
 
+function Mail.dateText(value)
+    local day, month, year = tostring(value):match("(%d+)%-(%a+)%-(%d+)")
+    local months = {Jan=1,Feb=2,Mar=3,Apr=4,May=5,Jun=6,Jul=7,Aug=8,Sep=9,Oct=10,Nov=11,Dec=12}
+    if day and months[month] then return string.format("%s-%02d-%02d",year,months[month],tonumber(day)) end
+    return gettext("Unknown date")
+end
+
 function Mail.quote(value)
-    assert(type(value) == "string" and not value:find("[%z\r\n]"), "Invalid IMAP string")
+    assert(type(value) == "string" and not value:find("[%z\r\n]"), gettext("Invalid IMAP string"))
     return '"' .. value:gsub("\\", "\\\\"):gsub('"', '\\"') .. '"'
 end
 
 function Mail.parse(text)
     local i, count = 1, 0
     local function value(depth)
-        assert(depth < 40, "IMAP nesting limit exceeded")
+        assert(depth < 40, gettext("IMAP nesting limit exceeded"))
         while text:sub(i,i):match("%s") do i = i + 1 end
         count = count + 1
-        assert(count < 100000, "IMAP token limit exceeded")
+        assert(count < 100000, gettext("IMAP token limit exceeded"))
         local c = text:sub(i,i)
         if c == "(" then
             i = i + 1
@@ -21,7 +29,7 @@ function Mail.parse(text)
             while true do
                 while text:sub(i,i):match("%s") do i = i + 1 end
                 if text:sub(i,i) == ")" then i = i + 1; return list end
-                assert(i <= #text, "Incomplete IMAP list")
+                assert(i <= #text, gettext("Incomplete IMAP list"))
                 list[#list+1] = value(depth+1)
             end
         elseif c == '"' then
@@ -33,11 +41,11 @@ function Mail.parse(text)
                 if c == "\\" then c = text:sub(i,i); i = i + 1 end
                 out[#out+1] = c
             end
-            error("Incomplete IMAP string")
+            error(gettext("Incomplete IMAP string"))
         end
         local start = i
         while i <= #text and not text:sub(i,i):match("[%s()]") do i = i + 1 end
-        assert(i > start, "Invalid IMAP token")
+        assert(i > start, gettext("Invalid IMAP token"))
         local atom = text:sub(start,i-1)
         if atom:upper() == "NIL" then return false end
         return tonumber(atom) or atom
@@ -64,14 +72,14 @@ local function charset_utf8(text, charset)
         local lib = ffi.os == "OSX" and ffi.load("iconv") or ffi.C
         local prefix = "iconv"
         local handle = lib[prefix .. "_open"]("UTF-8", charset)
-        assert(handle ~= ffi.cast("void *", -1), "Unsupported charset")
+        assert(handle ~= ffi.cast("void *", -1), gettext("Unsupported charset"))
         local input = ffi.new("char[?]", #text+1, text)
         local output = ffi.new("char[?]", #text*4+16)
         local src, dst = ffi.new("char *[1]", input), ffi.new("char *[1]", output)
         local src_n, dst_n = ffi.new("size_t[1]", #text), ffi.new("size_t[1]", #text*4+16)
         local status = lib[prefix](handle,src,src_n,dst,dst_n)
         lib[prefix .. "_close"](handle)
-        assert(status ~= ffi.cast("size_t",-1), "Invalid filename encoding")
+        assert(status ~= ffi.cast("size_t",-1), gettext("Invalid filename encoding"))
         return ffi.string(output,#text*4+16-tonumber(dst_n[0]))
     end)
     -- Preserve an ASCII extension even on platforms without this charset converter.
@@ -131,7 +139,7 @@ function Mail.safeFilename(name)
         base = base:sub(1,180-#ext):gsub("[\194-\244][\128-\191]*$", "")
         name = base .. ext
     end
-    return name ~= "" and name or "attachment"
+    return name ~= "" and name or gettext("attachment")
 end
 
 function Mail.attachments(body)
@@ -174,18 +182,18 @@ function Mail.decoder(encoding, write)
     return function(chunk)
         if encoding == "base64" then
             local data = carry .. (chunk or ""):gsub("%s", "")
-            assert(not data:find("[^A-Za-z0-9+/=]"), "Invalid base64 attachment")
-            assert(not ended or data == "", "Data after base64 padding")
+            assert(not data:find("[^A-Za-z0-9+/=]"), gettext("Invalid base64 attachment"))
+            assert(not ended or data == "", gettext("Data after base64 padding"))
             local n = chunk and (#data - #data%4) or #data
             local full = data:sub(1,n)
             carry = data:sub(n+1)
-            if not chunk then assert(#full%4 == 0, "Truncated base64 attachment") end
+            if not chunk then assert(#full%4 == 0, gettext("Truncated base64 attachment")) end
             if full ~= "" then
-                assert(not full:find("=[^=]"), "Invalid base64 padding")
+                assert(not full:find("=[^=]"), gettext("Invalid base64 padding"))
                 local padding = full:find("=",1,true)
-                if padding then assert(#full-padding < 2, "Invalid base64 padding"); ended = true end
+                if padding then assert(#full-padding < 2, gettext("Invalid base64 padding")); ended = true end
                 local decoded = mime.unb64(full)
-                assert(decoded, "Invalid base64 attachment")
+                assert(decoded, gettext("Invalid base64 attachment"))
                 write(decoded)
             end
         elseif encoding == "quoted-printable" then
@@ -196,12 +204,12 @@ function Mail.decoder(encoding, write)
                 if tail then carry=tail; data=data:sub(1,#data-#tail) end
             end
             local plain = data:gsub("=\r?\n", ""):gsub("=%x%x", "")
-            assert(not plain:find("=",1,true), "Invalid quoted-printable attachment")
+            assert(not plain:find("=",1,true), gettext("Invalid quoted-printable attachment"))
             data = data:gsub("=\r?\n", ""):gsub("=(%x%x)",function(h) return string.char(tonumber(h,16)) end)
             write(data)
         elseif encoding == "7bit" or encoding == "8bit" or encoding == "binary" then
             if chunk then write(chunk) end
-        else error("Unsupported attachment encoding: " .. tostring(encoding)) end
+        else error(string.format(gettext("Unsupported attachment encoding: %s"),tostring(encoding))) end
     end
 end
 

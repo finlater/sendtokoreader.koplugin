@@ -1,5 +1,6 @@
+local gettext = require("sendtokoreader/i18n")
 return {
-    fullname = "Send to KOReader · 邮件收书",
-    description = "绑定 IMAP 邮箱，手动检查并下载电子书附件。",
+    fullname = gettext("sendtokoreader · Mail inbox"),
+    description = gettext("Link an IMAP mailbox to check and download ebook attachments."),
     version = "0.1.0",
 }

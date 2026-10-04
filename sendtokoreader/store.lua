@@ -1,3 +1,4 @@
+local gettext = require("sendtokoreader/i18n")
 local ffi = require("ffi")
 local bit = require("bit")
 local ffiutil = require("ffi/util")
@@ -15,22 +16,22 @@ local function read(path)
     if not file then return {} end
     local text = file:read("*a"); file:close()
     local ok, data = pcall(json.decode,text)
-    assert(ok and type(data) == "table", "收书配置或下载记录损坏，请保留文件并检查：" .. path)
+    assert(ok and type(data) == "table", string.format(gettext("Mailbox settings or download history are damaged. Keep the file and check: %s"),path))
     return data
 end
 
 function Store.write(path, data)
     local temp = path .. ".tmp"
-    local file = assert(io.open(temp,"wb"), "无法写入收书配置")
+    local file = assert(io.open(temp,"wb"), gettext("Could not write mailbox settings."))
     ffi.C.chmod(temp,384) -- 0600; FAT-backed Kindle storage may not enforce POSIX modes.
     local ok, err = pcall(function()
-        assert(file:write(json.encode(data)), "写入收书记录失败")
-        assert(file:flush(), "写入收书记录失败")
+        assert(file:write(json.encode(data)), gettext("Could not write download history."))
+        assert(file:flush(), gettext("Could not write download history."))
         ffiutil.fsyncOpenedFile(file)
     end)
     local closed = file:close()
-    if not ok or not closed then os.remove(temp); error(err or "关闭记录文件失败",0) end
-    assert(os.rename(temp,path), "保存收书配置失败")
+    if not ok or not closed then os.remove(temp); error(err or gettext("Could not close the history file."),0) end
+    assert(os.rename(temp,path), gettext("Could not save mailbox settings."))
     ffiutil.fsyncDirectory(path)
 end
 
@@ -96,10 +97,10 @@ function Store:isDownloaded(item)
 end
 
 function Store:prepare(item, directory)
-    assert(type(directory) == "string" and directory ~= "", "请选择下载目录")
+    assert(type(directory) == "string" and directory ~= "", gettext("Choose a download folder."))
     util.makePath(directory)
     local _, available = ffiutil.df(directory)
-    assert(available > item.wire_size + 1024*1024, "下载目录可用空间不足")
+    assert(available > item.wire_size + 1024*1024, gettext("Not enough space in the download folder."))
     local temp = directory .. "/.sendtokoreader-" .. tostring(ffi.C.getpid()) .. ".part"
     self.data.inflight = {key=item.key,temp=temp}
     self:saveData(self.data)
@@ -117,7 +118,7 @@ function Store:abort()
 end
 
 function Store:commit(item, temp, directory, bytes)
-    assert(lfs.attributes(temp,"size") == bytes, "下载文件大小不一致")
+    assert(lfs.attributes(temp,"size") == bytes, gettext("The downloaded file size does not match."))
     local name = Mail.safeFilename(item.name)
     local base, extension = name:match("^(.*)(%.[^.]+)$")
     base, extension = base or name, extension or ""
@@ -127,12 +128,12 @@ function Store:commit(item, temp, directory, bytes)
         local candidate = directory .. "/" .. base .. (n == 0 and "" or " (" .. n .. ")") .. extension
         local fd = ffi.C.open(candidate,bit.bor(ffi.C.O_WRONLY,ffi.C.O_CREAT,exclusive),ffi.cast("mode_t",420))
         if fd >= 0 then ffi.C.close(fd); destination=candidate; break end
-        assert(ffi.errno() == 17, "无法在下载目录创建文件") -- EEXIST
+        assert(ffi.errno() == 17, gettext("Could not create a file in the download folder.")) -- EEXIST
     end
-    assert(destination, "同名文件过多")
+    assert(destination, gettext("Too many files with the same name."))
     self.data.inflight = {key=item.key,temp=temp,destination=destination,bytes=bytes}
     self:saveData(self.data)
-    assert(os.rename(temp,destination), "无法完成附件落盘")
+    assert(os.rename(temp,destination), gettext("Could not finalize the downloaded attachment."))
     ffiutil.fsyncDirectory(destination)
     self.data.downloaded[item.key] = {path=destination,size=bytes}
     self.data.inflight = nil
